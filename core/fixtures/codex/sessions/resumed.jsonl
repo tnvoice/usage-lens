@@ -1,0 +1,2 @@
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":4800,"cached_input_tokens":300,"output_tokens":100,"total_tokens":5000},"last_token_usage":{"input_tokens":90,"cached_input_tokens":10,"output_tokens":10,"total_tokens":100}}}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":4900,"cached_input_tokens":320,"output_tokens":110,"total_tokens":5100},"last_token_usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10,"total_tokens":100}}}}
