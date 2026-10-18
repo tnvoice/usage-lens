@@ -1,6 +1,17 @@
-// usage-lens 回归测试（零依赖，node test.mjs 即可）
+// usage-lens 回归测试（零依赖，node test.mjs 即可；路径用 import.meta.url 定位，从仓库根或 core/ 都能跑）
 // 全部断言基于**合成夹具**，不含任何真实用量帧或本机路径（#309/#311/#313）。
 import { execFileSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const CORE = fileURLToPath(new URL('.', import.meta.url));
+const ENGINE = CORE + 'usage-lens.mjs';
+const FIXTURES = CORE + 'fixtures';
+const FIXTURES_NEG = CORE + 'fixtures-negative';
+
+// 空目录不会被 git 跟踪。测试里现建，保证「装了但无日志」在任何机器上都一致。
+mkdirSync(FIXTURES + '/cursor', { recursive: true });
+mkdirSync(FIXTURES + '/gemini', { recursive: true });
 
 let failures = 0;
 const check = (label, got, want) => {
@@ -11,19 +22,19 @@ const check = (label, got, want) => {
 // CLI 在"无 verified 来源"时退出码为 1，但 stdout 仍是合法 JSON → 一律取 stdout。
 const run = (args) => {
   let out;
-  try { out = execFileSync('node', ['usage-lens.mjs', ...args, '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); }
+  try { out = execFileSync('node', [ENGINE, ...args, '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); }
   catch (e) { out = e.stdout; }
   return JSON.parse(out);
 };
 
 // 1) XXH64 回归自检（官方向量 7/7，不参与读账）
 let selftestOk = true;
-try { selftestOk = execFileSync('node', ['usage-lens.mjs', '--selftest'], { encoding: 'utf8' }).includes('7/7'); }
+try { selftestOk = execFileSync('node', [ENGINE, '--selftest'], { encoding: 'utf8' }).includes('7/7'); }
 catch { selftestOk = false; }
 check('XXH64 自检 7/7', selftestOk, true);
 
 // 2) 正向夹具（全部合成帧）
-const fx = run(['--root', 'fixtures']);
+const fx = run(['--root', FIXTURES]);
 const codex = fx.sources.find((s) => s.source === 'codex');
 const dsh = fx.sources.find((s) => s.source === 'dsh');
 check('codex 扣除/隔离 = 1/2', [codex.deductedExact, codex.carriedFiles], [1, 2]);
@@ -53,7 +64,7 @@ check('codex window.today.metrics = null（累计型待接）', codex.window.tod
 check('计数类型 null|number', fx.sources.every((s) => ['carriedFiles', 'badLines', 'badFrames'].every((f) => s[f] === null || typeof s[f] === 'number')), true);
 
 // 3) 负向夹具（合成帧：一个坏帧[checksum 标志置位+错误校验和] + 一个好帧）
-const ng = run(['--root', 'fixtures-negative']);
+const ng = run(['--root', FIXTURES_NEG]);
 const ngDsh = ng.sources.find((s) => s.source === 'dsh');
 check('负向：badFrames = 1', ngDsh.badFrames, 1);
 check('负向：好帧记录 = 1（坏帧未计入）', ngDsh.records, 1);
