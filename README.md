@@ -7,3 +7,5 @@
 - 菜单栏原型：`app/swiftbar/usage-lens.5m.sh`（SwiftBar，每 5 分钟）。把 `USAGE_LENS_CLI` 指到 `node core/usage-lens.mjs`。没填预算时不画环，只显示数字。
 
 夹具是合成数据。说明见 `core/README.md`。
+
+License: MIT
